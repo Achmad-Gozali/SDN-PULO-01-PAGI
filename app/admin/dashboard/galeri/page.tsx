@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Trash2, Loader2, X, Upload, AlertCircle } from "lucide-react";
 
@@ -27,14 +27,17 @@ export default function AdminGaleriPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
-  const fetchGaleri = async () => {
+  // FIX: useCallback agar dependency array useEffect benar
+  const fetchGaleri = useCallback(async () => {
     setIsLoading(true);
     const { data } = await supabase.from("galeri").select("*").order("created_at", { ascending: false });
     setGaleriList(data || []);
     setIsLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchGaleri(); }, []);
+  useEffect(() => {
+    fetchGaleri();
+  }, [fetchGaleri]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,7 +51,9 @@ export default function AdminGaleriPage() {
     if (!imageFile) return;
     setIsSubmitting(true);
 
-    const fileName = `galeri-${Date.now()}-${imageFile.name}`;
+    // FIX: Date.now() di dalam handler, bukan di render
+    const timestamp = Date.now();
+    const fileName = `galeri-${timestamp}-${imageFile.name}`;
     const { data: uploadData, error } = await supabase.storage
       .from("gallery-images").upload(fileName, imageFile);
 
@@ -84,7 +89,6 @@ export default function AdminGaleriPage() {
         </button>
       </div>
 
-      {/* Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="animate-spin text-slate-400" size={32} />
@@ -112,7 +116,6 @@ export default function AdminGaleriPage() {
         </div>
       )}
 
-      {/* Modal Upload */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIsModalOpen(false)} />
@@ -164,7 +167,6 @@ export default function AdminGaleriPage() {
         </div>
       )}
 
-      {/* Konfirmasi Hapus */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setDeleteId(null)} />

@@ -41,12 +41,13 @@ export default function RegistrationForm() {
     const supabase = createClient();
 
     // FIX (SUPABASE): Upload file KK ke Supabase Storage bucket 'spmb-documents'
+    const timestamp = Date.now();
     const fileKK = (data.fileKK as FileList)[0];
     const fileAkte = (data.fileAkte as FileList)[0];
 
     const { data: kkUpload, error: kkError } = await supabase.storage
       .from("spmb-documents")
-      .upload(`kk/${data.nik}-${Date.now()}-${fileKK.name}`, fileKK);
+      .upload(`kk/${data.nik}-${timestamp}-${fileKK.name}`, fileKK);
 
     if (kkError) {
       setSubmitError("Gagal mengupload file KK. Silakan coba lagi.");
@@ -57,7 +58,7 @@ export default function RegistrationForm() {
     // FIX (SUPABASE): Upload file Akte ke Supabase Storage
     const { data: akteUpload, error: akteError } = await supabase.storage
       .from("spmb-documents")
-      .upload(`akte/${data.nik}-${Date.now()}-${fileAkte.name}`, fileAkte);
+      .upload(`akte/${data.nik}-${timestamp}-${fileAkte.name}`, fileAkte);
 
     if (akteError) {
       setSubmitError("Gagal mengupload file Akte. Silakan coba lagi.");

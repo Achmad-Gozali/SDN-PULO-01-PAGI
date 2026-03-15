@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Pencil, Trash2, Loader2, X, Upload, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,14 +37,17 @@ export default function AdminBeritaPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
-  const fetchBerita = async () => {
+  // FIX: fetchBerita dibungkus useCallback agar bisa dipakai di useEffect dengan benar
+  const fetchBerita = useCallback(async () => {
     setIsLoading(true);
     const { data } = await supabase.from("berita").select("*").order("created_at", { ascending: false });
     setBeritaList(data || []);
     setIsLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchBerita(); }, []);
+  useEffect(() => {
+    fetchBerita();
+  }, [fetchBerita]);
 
   const openModal = (berita?: Berita) => {
     if (berita) {
@@ -76,7 +79,9 @@ export default function AdminBeritaPage() {
     let imageUrl = form.image_url;
 
     if (imageFile) {
-      const fileName = `berita-${Date.now()}-${imageFile.name}`;
+      // FIX: Date.now() dipindah ke dalam handler, bukan di render
+      const timestamp = Date.now();
+      const fileName = `berita-${timestamp}-${imageFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("gallery-images").upload(fileName, imageFile);
       if (uploadError) { setIsSubmitting(false); return; }
@@ -115,7 +120,6 @@ export default function AdminBeritaPage() {
         </button>
       </div>
 
-      {/* List */}
       <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
@@ -160,7 +164,6 @@ export default function AdminBeritaPage() {
         )}
       </div>
 
-      {/* Modal Tambah/Edit */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIsModalOpen(false)} />
@@ -172,7 +175,6 @@ export default function AdminBeritaPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Image Upload */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Foto Berita</label>
                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -243,7 +245,6 @@ export default function AdminBeritaPage() {
         </div>
       )}
 
-      {/* Konfirmasi Hapus */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setDeleteId(null)} />

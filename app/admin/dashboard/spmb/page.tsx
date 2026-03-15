@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Search, CheckCircle2, Clock, XCircle, Eye, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,8 @@ export default function AdminSpmbPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateForm, setUpdateForm] = useState({ status: "", pesan: "" });
 
-  const fetchData = async () => {
+  // FIX: useCallback agar dependency array useEffect benar
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     const { data: registrations } = await supabase
       .from("spmb_registrations")
@@ -40,9 +41,11 @@ export default function AdminSpmbPage() {
       .order("created_at", { ascending: false });
     setData(registrations || []);
     setIsLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filtered = data.filter((reg) => {
     const matchSearch = reg.nama_lengkap.toLowerCase().includes(search.toLowerCase()) ||
@@ -100,7 +103,6 @@ export default function AdminSpmbPage() {
         </button>
       </div>
 
-      {/* Filter */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
@@ -118,7 +120,6 @@ export default function AdminSpmbPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
@@ -174,7 +175,6 @@ export default function AdminSpmbPage() {
         )}
       </div>
 
-      {/* Detail Modal */}
       {selectedReg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setSelectedReg(null)} />
@@ -184,7 +184,6 @@ export default function AdminSpmbPage() {
               <button onClick={() => setSelectedReg(null)} className="text-slate-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-6">
-              {/* Info */}
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: "Nama Lengkap", value: selectedReg.nama_lengkap },
@@ -205,7 +204,6 @@ export default function AdminSpmbPage() {
                 </div>
               </div>
 
-              {/* Dokumen */}
               <div className="space-y-2">
                 <p className="text-slate-300 text-sm font-bold">Dokumen</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -220,7 +218,6 @@ export default function AdminSpmbPage() {
                 </div>
               </div>
 
-              {/* Update Status */}
               <div className="space-y-3 pt-4 border-t border-slate-700">
                 <p className="text-slate-300 text-sm font-bold">Update Status</p>
                 <select value={updateForm.status} onChange={(e) => setUpdateForm({...updateForm, status: e.target.value})}
