@@ -31,7 +31,7 @@ export default function HeadmasterGreeting() {
             <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-blue-600 rounded-[3rem] z-0 opacity-10 rotate-12" />
             
             <div className="absolute bottom-8 left-8 right-8 bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl z-20 border border-white/20">
-              <h4 className="font-bold text-slate-900 text-lg">Hj. Siti Aminah, M.Pd</h4>
+              <h4 className="font-bold text-slate-900 text-lg">Julaiha, S.Pd.Gr.</h4>
               <p className="text-blue-600 text-sm font-bold uppercase tracking-wider">Kepala Sekolah</p>
             </div>
           </motion.div>
