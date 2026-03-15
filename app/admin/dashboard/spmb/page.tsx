@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2, Search, CheckCircle2, Clock, XCircle, Eye, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const supabase = createClient();
+
+const SUPABASE_STORAGE = "https://mbifzvgceswygbvzjvjk.supabase.co/storage/v1/object/public/spmb-documents";
+
 interface Registration {
   id: string;
   nama_lengkap: string;
@@ -20,10 +24,7 @@ interface Registration {
   created_at: string;
 }
 
-const SUPABASE_STORAGE = "https://mbifzvgceswygbvzjvjk.supabase.co/storage/v1/object/public/spmb-documents";
-
 export default function AdminSpmbPage() {
-  const supabase = createClient();
   const [data, setData] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -32,7 +33,6 @@ export default function AdminSpmbPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateForm, setUpdateForm] = useState({ status: "", pesan: "" });
 
-  // FIX: useCallback agar dependency array useEffect benar
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     const { data: registrations } = await supabase
@@ -220,13 +220,13 @@ export default function AdminSpmbPage() {
 
               <div className="space-y-3 pt-4 border-t border-slate-700">
                 <p className="text-slate-300 text-sm font-bold">Update Status</p>
-                <select value={updateForm.status} onChange={(e) => setUpdateForm({...updateForm, status: e.target.value})}
+                <select value={updateForm.status} onChange={(e) => setUpdateForm({ ...updateForm, status: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all">
                   <option value="PROSES">PROSES</option>
                   <option value="DITERIMA">DITERIMA</option>
                   <option value="DITOLAK">DITOLAK</option>
                 </select>
-                <textarea value={updateForm.pesan} onChange={(e) => setUpdateForm({...updateForm, pesan: e.target.value})}
+                <textarea value={updateForm.pesan} onChange={(e) => setUpdateForm({ ...updateForm, pesan: e.target.value })}
                   rows={3} placeholder="Pesan untuk pendaftar..."
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm" />
                 <button onClick={handleUpdate} disabled={isUpdating}

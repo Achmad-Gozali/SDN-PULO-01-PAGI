@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Plus, Pencil, Trash2, Loader2, X, Upload, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const supabase = createClient();
+
 const SUPABASE_URL = "https://mbifzvgceswygbvzjvjk.supabase.co/storage/v1/object/public/gallery-images";
 const CATEGORIES = ["PRESTASI", "PENGUMUMAN", "PENTING"];
 
@@ -21,7 +23,6 @@ interface Berita {
 }
 
 export default function AdminBeritaPage() {
-  const supabase = createClient();
   const [beritaList, setBeritaList] = useState<Berita[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +38,6 @@ export default function AdminBeritaPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
-  // FIX: fetchBerita dibungkus useCallback agar bisa dipakai di useEffect dengan benar
   const fetchBerita = useCallback(async () => {
     setIsLoading(true);
     const { data } = await supabase.from("berita").select("*").order("created_at", { ascending: false });
@@ -52,13 +52,17 @@ export default function AdminBeritaPage() {
   const openModal = (berita?: Berita) => {
     if (berita) {
       setEditData(berita);
-      setForm({ title: berita.title, excerpt: berita.excerpt, content: berita.content,
-        category: berita.category, author: berita.author, date: berita.date, image_url: berita.image_url });
+      setForm({
+        title: berita.title, excerpt: berita.excerpt, content: berita.content,
+        category: berita.category, author: berita.author, date: berita.date, image_url: berita.image_url,
+      });
       setImagePreview(berita.image_url);
     } else {
       setEditData(null);
-      setForm({ title: "", excerpt: "", content: "", category: "PRESTASI",
-        author: "Humas Sekolah", date: new Date().toLocaleDateString("id-ID"), image_url: "" });
+      setForm({
+        title: "", excerpt: "", content: "", category: "PRESTASI",
+        author: "Humas Sekolah", date: new Date().toLocaleDateString("id-ID"), image_url: "",
+      });
       setImagePreview("");
     }
     setImageFile(null);
@@ -79,7 +83,6 @@ export default function AdminBeritaPage() {
     let imageUrl = form.image_url;
 
     if (imageFile) {
-      // FIX: Date.now() dipindah ke dalam handler, bukan di render
       const timestamp = Date.now();
       const fileName = `berita-${timestamp}-${imageFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -193,38 +196,38 @@ export default function AdminBeritaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-medium text-slate-300">Judul</label>
-                  <input value={form.title} onChange={(e) => setForm({...form, title: e.target.value})}
+                  <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                     placeholder="Judul berita..." required
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-300">Kategori</label>
-                  <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}
+                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all">
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-300">Penulis</label>
-                  <input value={form.author} onChange={(e) => setForm({...form, author: e.target.value})}
+                  <input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })}
                     placeholder="Nama penulis..." required
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-medium text-slate-300">Tanggal</label>
-                  <input value={form.date} onChange={(e) => setForm({...form, date: e.target.value})}
+                  <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
                     placeholder="Contoh: 16 Maret 2026" required
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-medium text-slate-300">Ringkasan</label>
-                  <textarea value={form.excerpt} onChange={(e) => setForm({...form, excerpt: e.target.value})}
+                  <textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
                     rows={2} placeholder="Ringkasan singkat berita..." required
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all resize-none" />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-medium text-slate-300">Konten (HTML)</label>
-                  <textarea value={form.content} onChange={(e) => setForm({...form, content: e.target.value})}
+                  <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
                     rows={8} placeholder="<p>Isi berita lengkap...</p>" required
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all resize-none font-mono text-sm" />
                 </div>

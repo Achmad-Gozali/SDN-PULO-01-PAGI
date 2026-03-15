@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Trash2, Loader2, X, Upload, AlertCircle } from "lucide-react";
 
+const supabase = createClient();
+
 const SUPABASE_URL = "https://mbifzvgceswygbvzjvjk.supabase.co/storage/v1/object/public/gallery-images";
 const CATEGORIES = ["Prestasi", "Pramuka", "Olahraga", "Kegiatan"];
 
@@ -16,7 +18,6 @@ interface GaleriItem {
 }
 
 export default function AdminGaleriPage() {
-  const supabase = createClient();
   const [galeriList, setGaleriList] = useState<GaleriItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +28,6 @@ export default function AdminGaleriPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
-  // FIX: useCallback agar dependency array useEffect benar
   const fetchGaleri = useCallback(async () => {
     setIsLoading(true);
     const { data } = await supabase.from("galeri").select("*").order("created_at", { ascending: false });
@@ -51,7 +51,6 @@ export default function AdminGaleriPage() {
     if (!imageFile) return;
     setIsSubmitting(true);
 
-    // FIX: Date.now() di dalam handler, bukan di render
     const timestamp = Date.now();
     const fileName = `galeri-${timestamp}-${imageFile.name}`;
     const { data: uploadData, error } = await supabase.storage
@@ -141,13 +140,13 @@ export default function AdminGaleriPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Judul Foto</label>
-                <input value={form.title} onChange={(e) => setForm({...form, title: e.target.value})}
+                <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Judul foto..." required
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Kategori</label>
-                <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all">
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>

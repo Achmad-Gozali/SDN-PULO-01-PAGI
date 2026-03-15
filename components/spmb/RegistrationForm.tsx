@@ -5,24 +5,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { spmbSchema, SpmbFormData } from "@/lib/validations/spmb";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  User, 
-  Users, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  User,
+  Users,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
   Loader2,
   Upload,
   Phone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-// FIX (SUPABASE): import supabase client
 import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 export default function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  // FIX (SUPABASE): tambah state untuk handle error dari supabase
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
@@ -38,9 +38,6 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const supabase = createClient();
-
-    // FIX (SUPABASE): Upload file KK ke Supabase Storage bucket 'spmb-documents'
     const timestamp = Date.now();
     const fileKK = (data.fileKK as FileList)[0];
     const fileAkte = (data.fileAkte as FileList)[0];
@@ -55,7 +52,6 @@ export default function RegistrationForm() {
       return;
     }
 
-    // FIX (SUPABASE): Upload file Akte ke Supabase Storage
     const { data: akteUpload, error: akteError } = await supabase.storage
       .from("spmb-documents")
       .upload(`akte/${data.nik}-${timestamp}-${fileAkte.name}`, fileAkte);
@@ -66,8 +62,6 @@ export default function RegistrationForm() {
       return;
     }
 
-    // FIX (SUPABASE): Insert data pendaftaran ke tabel 'spmb_registrations'
-    // Pastikan tabel punya kolom: nama_lengkap, nik, tanggal_lahir, nama_orang_tua, whatsapp, alamat, file_kk_path, file_akte_path, status
     const { error: insertError } = await supabase
       .from("spmb_registrations")
       .insert({
@@ -79,11 +73,10 @@ export default function RegistrationForm() {
         alamat: data.alamat,
         file_kk_path: kkUpload.path,
         file_akte_path: akteUpload.path,
-        status: "PROSES", // default status saat pertama daftar
+        status: "PROSES",
       });
 
     if (insertError) {
-      // Handle duplicate NIK
       if (insertError.code === "23505") {
         setSubmitError("NIK ini sudah terdaftar dalam sistem. Silakan cek status pendaftaran Anda.");
       } else {
@@ -115,7 +108,7 @@ export default function RegistrationForm() {
               <p className="text-emerald-700 text-sm mt-1">
                 Terima kasih telah mendaftar di SDN Pulo 01 Pagi. Mohon tunggu informasi selanjutnya mengenai jadwal verifikasi dokumen via WhatsApp.
               </p>
-              <button 
+              <button
                 onClick={() => setIsSuccess(false)}
                 className="mt-4 text-sm font-bold text-emerald-800 hover:underline"
               >
@@ -125,7 +118,6 @@ export default function RegistrationForm() {
           </motion.div>
         )}
 
-        {/* FIX (SUPABASE): tampilkan error message jika submit gagal */}
         {submitError && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -137,7 +129,7 @@ export default function RegistrationForm() {
             <div>
               <h3 className="font-bold text-red-900 text-lg">Pendaftaran Gagal</h3>
               <p className="text-red-700 text-sm mt-1">{submitError}</p>
-              <button 
+              <button
                 onClick={() => setSubmitError(null)}
                 className="mt-4 text-sm font-bold text-red-800 hover:underline"
               >
@@ -157,7 +149,6 @@ export default function RegistrationForm() {
             </div>
             <h2 className="text-xl font-bold text-slate-900">Data Calon Murid</h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Nama Lengkap Murid</label>
@@ -175,7 +166,6 @@ export default function RegistrationForm() {
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">NIK Calon Murid</label>
               <input
@@ -193,7 +183,6 @@ export default function RegistrationForm() {
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Tanggal Lahir</label>
               <input
@@ -221,7 +210,6 @@ export default function RegistrationForm() {
             </div>
             <h2 className="text-xl font-bold text-slate-900">Data Orang Tua / Wali</h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Nama Orang Tua / Wali</label>
@@ -239,7 +227,6 @@ export default function RegistrationForm() {
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Nomor WhatsApp Aktif</label>
               <div className="relative">
@@ -259,7 +246,6 @@ export default function RegistrationForm() {
                 </p>
               )}
             </div>
-
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-bold text-slate-700">Alamat Lengkap Sesuai KK</label>
               <textarea
@@ -288,7 +274,6 @@ export default function RegistrationForm() {
             </div>
             <h2 className="text-xl font-bold text-slate-900">Dokumen Persyaratan</h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-sm font-bold text-slate-700">Scan Kartu Keluarga (KK)</label>
@@ -314,7 +299,6 @@ export default function RegistrationForm() {
                 </p>
               )}
             </div>
-
             <div className="space-y-3">
               <label className="text-sm font-bold text-slate-700">Scan Akte Kelahiran</label>
               <div className="relative group">
@@ -348,8 +332,8 @@ export default function RegistrationForm() {
             disabled={isSubmitting}
             className={cn(
               "w-full py-5 rounded-2xl text-white font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3",
-              isSubmitting 
-                ? "bg-slate-400 cursor-not-allowed" 
+              isSubmitting
+                ? "bg-slate-400 cursor-not-allowed"
                 : "bg-blue-700 hover:bg-blue-800 shadow-blue-700/20 active:scale-[0.98]"
             )}
           >
