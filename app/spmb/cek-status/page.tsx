@@ -6,12 +6,11 @@ import Footer from "@/components/layout/Footer";
 import { Search, Loader2, AlertCircle, CheckCircle2, XCircle, Clock, User, Fingerprint } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
-// FIX (SUPABASE): import supabase client
 import { createClient } from "@/lib/supabase/client";
 
 interface RegistrationData {
   nik: string;
-  nama: string;
+  nama_lengkap: string;
   status: 'PROSES' | 'DITERIMA' | 'DITOLAK';
   pesan: string;
 }
@@ -21,8 +20,6 @@ export default function CekStatusPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResult, setSearchResult] = useState<RegistrationData | 'NOT_FOUND' | null>(null);
 
-  // FIX (SUPABASE): query langsung ke tabel 'spmb_registrations' di Supabase
-  // Pastikan tabel punya kolom: nik, nama, status, pesan
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (nikInput.length < 16) return;
@@ -31,9 +28,10 @@ export default function CekStatusPage() {
     setSearchResult(null);
 
     const supabase = createClient();
+    // FIX: select kolom yang benar sesuai struktur tabel (nama_lengkap bukan nama)
     const { data, error } = await supabase
       .from("spmb_registrations")
-      .select("nik, nama, status, pesan")
+      .select("nik, nama_lengkap, status, pesan")
       .eq("nik", nikInput)
       .single();
 
@@ -54,20 +52,19 @@ export default function CekStatusPage() {
     <main className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
 
-      {/* Hero Section */}
       <section className="pt-32 pb-20 bg-blue-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
         </div>
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-5xl font-black mb-4"
           >
             Cek Status Pendaftaran <br className="hidden md:block" /> SPMB 2026
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -78,10 +75,9 @@ export default function CekStatusPage() {
         </div>
       </section>
 
-      {/* Search Form Section */}
       <section className="px-6 -mt-12 relative z-20 flex-grow pb-20">
         <div className="max-w-3xl mx-auto">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -121,20 +117,13 @@ export default function CekStatusPage() {
                 )}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={24} />
-                    Sedang Mencari...
-                  </>
+                  <><Loader2 className="animate-spin" size={24} /> Sedang Mencari...</>
                 ) : (
-                  <>
-                    <Search size={24} />
-                    Cek Hasil Seleksi
-                  </>
+                  <><Search size={24} /> Cek Hasil Seleksi</>
                 )}
               </button>
             </form>
 
-            {/* Results Area */}
             <AnimatePresence mode="wait">
               {searchResult === 'NOT_FOUND' && (
                 <motion.div
@@ -151,8 +140,7 @@ export default function CekStatusPage() {
                     <div>
                       <h4 className="font-bold text-red-900 mb-1">Data Tidak Ditemukan</h4>
                       <p className="text-red-700 text-sm leading-relaxed">
-                        {/* FIX: NIK di-mask agar tidak tampil polos, pakai maskNik() */}
-                        Data pendaftaran dengan NIK <strong>{maskNik(nikInput)}</strong> tidak ditemukan dalam sistem kami. 
+                        Data pendaftaran dengan NIK <strong>{maskNik(nikInput)}</strong> tidak ditemukan dalam sistem kami.
                         Mohon periksa kembali nomor yang Anda masukkan atau hubungi panitia SPMB jika Anda merasa sudah mendaftar.
                       </p>
                     </div>
@@ -168,7 +156,6 @@ export default function CekStatusPage() {
                   className="mt-10 pt-10 border-t border-slate-100"
                 >
                   <div className="space-y-8">
-                    {/* Status Badge */}
                     <div className="text-center">
                       <div className={cn(
                         "inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-black uppercase tracking-widest mb-4 shadow-sm",
@@ -179,21 +166,20 @@ export default function CekStatusPage() {
                         {searchResult.status === 'DITERIMA' && <CheckCircle2 size={18} />}
                         {searchResult.status === 'PROSES' && <Clock size={18} />}
                         {searchResult.status === 'DITOLAK' && <XCircle size={18} />}
-                        
                         {searchResult.status === 'DITERIMA' && "DITERIMA"}
                         {searchResult.status === 'PROSES' && "SEDANG DIPROSES"}
                         {searchResult.status === 'DITOLAK' && "TIDAK LULUS SELEKSI"}
                       </div>
                     </div>
 
-                    {/* Data Card */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <div className="flex items-center gap-3 text-slate-400 mb-2">
                           <User size={16} />
                           <span className="text-xs font-bold uppercase tracking-wider">Nama Calon Murid</span>
                         </div>
-                        <p className="text-lg font-black text-slate-900 uppercase">{searchResult.nama}</p>
+                        {/* FIX: pakai nama_lengkap bukan nama */}
+                        <p className="text-lg font-black text-slate-900 uppercase">{searchResult.nama_lengkap}</p>
                       </div>
                       <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <div className="flex items-center gap-3 text-slate-400 mb-2">
@@ -204,7 +190,6 @@ export default function CekStatusPage() {
                       </div>
                     </div>
 
-                    {/* Message Box */}
                     <div className={cn(
                       "p-8 rounded-3xl border-2",
                       searchResult.status === 'DITERIMA' && "bg-emerald-50/50 border-emerald-100 text-emerald-900",
@@ -215,7 +200,6 @@ export default function CekStatusPage() {
                       <p className="leading-relaxed font-medium">{searchResult.pesan}</p>
                     </div>
 
-                    {/* Action Button */}
                     {searchResult.status === 'DITERIMA' && (
                       <div className="text-center pt-4">
                         <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/20">
