@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { stats } from "@/lib/dummy-data";
+import { stats } from "@/lib/home-data";
 import { Users, GraduationCap, Trophy, Award } from "lucide-react";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -19,7 +19,6 @@ export default function StatsSection() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
           {stats.map((stat, index) => {
             const IconComponent = iconMap[stat.iconName];
-
             return (
               <motion.div
                 key={stat.label}

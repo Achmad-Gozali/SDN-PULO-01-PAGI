@@ -4,18 +4,10 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-// FIX: alias import agar semantik sesuai konteks halaman berita
-import { madingPosts as beritaPosts } from "@/lib/mading-data";
-import { 
-  ArrowLeft, 
-  Calendar, 
-  User, 
-  Share2, 
-  Facebook, 
-  MessageCircle, 
-  Twitter,
-  Clock,
-  Tag
+import { createClient } from "@/lib/supabase/server";
+import {
+  ArrowLeft, Calendar, User, Share2, Facebook,
+  MessageCircle, Twitter, Clock, Tag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,21 +17,23 @@ interface PageProps {
 
 export default async function BeritaDetailPage({ params }: PageProps) {
   const { id } = await params;
-  // FIX: pakai beritaPosts (alias dari madingPosts)
-  const post = beritaPosts.find((p) => p.id === id);
+  const supabase = await createClient();
 
-  if (!post) {
-    notFound();
-  }
+  const { data: post } = await supabase
+    .from("berita")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (!post) notFound();
 
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Header / Breadcrumb */}
       <div className="pt-32 pb-8 px-6 max-w-4xl mx-auto">
-        <Link 
-          href="/berita" 
+        <Link
+          href="/berita"
           className="inline-flex items-center gap-2 text-blue-600 font-bold text-sm hover:gap-3 transition-all mb-8 group"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Kembali ke Berita
@@ -49,8 +43,8 @@ export default async function BeritaDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <span className={cn(
               "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-              post.category === "PENTING" 
-                ? "bg-red-100 text-red-700" 
+              post.category === "PENTING"
+                ? "bg-red-100 text-red-700"
                 : "bg-blue-100 text-blue-700"
             )}>
               {post.category}
@@ -79,11 +73,10 @@ export default async function BeritaDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Hero Image */}
       <div className="max-w-5xl mx-auto px-6 mb-12">
         <div className="relative aspect-[21/9] rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100">
           <Image
-            src={post.imageUrl}
+            src={post.image_url}
             alt={post.title}
             fill
             priority
@@ -93,11 +86,10 @@ export default async function BeritaDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Article Content */}
       <article className="max-w-3xl mx-auto px-6 pb-20">
-        <div 
-          className="prose prose-slate prose-lg max-w-none 
-            prose-headings:text-slate-900 prose-headings:font-black 
+        <div
+          className="prose prose-slate prose-lg max-w-none
+            prose-headings:text-slate-900 prose-headings:font-black
             prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-justify
             prose-strong:text-slate-900 prose-strong:font-bold
             prose-li:text-slate-600
@@ -105,7 +97,6 @@ export default async function BeritaDetailPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        {/* Tags & Share */}
         <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex items-center gap-2">
             <Tag size={18} className="text-slate-400" />
@@ -114,7 +105,6 @@ export default async function BeritaDetailPage({ params }: PageProps) {
               <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium">#KabarSekolah</span>
             </div>
           </div>
-
           <div className="flex items-center gap-4">
             <span className="text-sm font-bold text-slate-400 flex items-center gap-2">
               <Share2 size={18} /> Bagikan:

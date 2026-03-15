@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { latestNews } from "@/lib/dummy-data";
+import { latestNews } from "@/lib/home-data";
 import { Calendar, ArrowRight, Tag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

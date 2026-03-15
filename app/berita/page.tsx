@@ -1,21 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-// FIX: alias import agar semantik sesuai konteks halaman berita
-import { madingPosts as beritaPosts } from "@/lib/mading-data";
-import { Search, Calendar, User, ArrowRight, Newspaper } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Search, Calendar, User, ArrowRight, Newspaper, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
+interface BeritaItem {
+  id: string;
+  title: string;
+  excerpt: string;
+  image_url: string;
+  category: string;
+  author: string;
+  date: string;
+}
+
 export default function BeritaListPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [posts, setPosts] = useState<BeritaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // FIX: pakai beritaPosts (alias dari madingPosts)
-  const filteredPosts = beritaPosts.filter((post) =>
+  useEffect(() => {
+    const fetchBerita = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("berita")
+        .select("id, title, excerpt, image_url, category, author, date")
+        .order("created_at", { ascending: false });
+      setPosts(data || []);
+      setIsLoading(false);
+    };
+    fetchBerita();
+  }, []);
+
+  const filteredPosts = posts.filter((post) =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -24,12 +47,10 @@ export default function BeritaListPage() {
     <main className="min-h-screen bg-slate-50">
       <Navbar />
 
-      {/* Hero Section */}
       <section className="pt-32 pb-16 bg-blue-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
         </div>
-        
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -54,8 +75,6 @@ export default function BeritaListPage() {
           >
             Temukan informasi terkini, pengumuman penting, dan deretan prestasi membanggakan dari keluarga besar SDN Pulo 01 Pagi.
           </motion.p>
-
-          {/* Search Box */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -74,9 +93,12 @@ export default function BeritaListPage() {
         </div>
       </section>
 
-      {/* Posts Grid */}
       <section className="py-16 px-6 max-w-7xl mx-auto">
-        {filteredPosts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="animate-spin text-blue-600" size={40} />
+          </div>
+        ) : filteredPosts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredPosts.map((post, idx) => (
               <motion.article
@@ -87,10 +109,9 @@ export default function BeritaListPage() {
                 transition={{ delay: idx * 0.1 }}
                 className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
               >
-                {/* Image Container */}
                 <div className="relative aspect-video overflow-hidden">
                   <Image
-                    src={post.imageUrl}
+                    src={post.image_url}
                     alt={post.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -99,16 +120,14 @@ export default function BeritaListPage() {
                   <div className="absolute top-4 left-4">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm",
-                      post.category === "PENTING" 
-                        ? "bg-red-600 text-white" 
+                      post.category === "PENTING"
+                        ? "bg-red-600 text-white"
                         : "bg-blue-600 text-white"
                     )}>
                       {post.category}
                     </span>
                   </div>
                 </div>
-
-                {/* Content */}
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-center gap-4 text-slate-400 text-xs mb-4">
                     <span className="flex items-center gap-1">
@@ -118,15 +137,12 @@ export default function BeritaListPage() {
                       <User size={14} /> {post.author}
                     </span>
                   </div>
-                  
                   <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
                     {post.title}
                   </h3>
-                  
                   <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">
                     {post.excerpt}
                   </p>
-
                   <div className="mt-auto pt-4 border-t border-slate-50">
                     <Link
                       href={`/berita/${post.id}`}
