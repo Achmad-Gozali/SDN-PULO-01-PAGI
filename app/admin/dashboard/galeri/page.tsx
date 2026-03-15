@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, Loader2, X, Upload, AlertCircle } from "lucide-react";
-
-const supabase = createClient();
+import { Plus, Trash2, Loader2, X, Upload, AlertCircle, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const SUPABASE_URL = "https://mbifzvgceswygbvzjvjk.supabase.co/storage/v1/object/public/gallery-images";
 const CATEGORIES = ["Prestasi", "Pramuka", "Olahraga", "Kegiatan"];
@@ -18,13 +17,17 @@ interface GaleriItem {
 }
 
 export default function AdminGaleriPage() {
+  const supabase = createClient();
   const [galeriList, setGaleriList] = useState<GaleriItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<GaleriItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ title: "", category: "Prestasi" });
+  const [uploadForm, setUploadForm] = useState({ title: "", category: "Prestasi" });
+  const [editForm, setEditForm] = useState({ title: "", category: "Prestasi" });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
@@ -35,9 +38,7 @@ export default function AdminGaleriPage() {
     setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchGaleri();
-  }, [fetchGaleri]);
+  useEffect(() => { fetchGaleri(); }, [fetchGaleri]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,7 +47,7 @@ export default function AdminGaleriPage() {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageFile) return;
     setIsSubmitting(true);
@@ -59,12 +60,33 @@ export default function AdminGaleriPage() {
     if (error) { setIsSubmitting(false); return; }
 
     const imageUrl = `${SUPABASE_URL}/${uploadData.path}`;
-    await supabase.from("galeri").insert({ ...form, image_url: imageUrl });
+    await supabase.from("galeri").insert({ ...uploadForm, image_url: imageUrl });
 
-    setIsModalOpen(false);
-    setForm({ title: "", category: "Prestasi" });
+    setIsUploadOpen(false);
+    setUploadForm({ title: "", category: "Prestasi" });
     setImageFile(null);
     setImagePreview("");
+    fetchGaleri();
+    setIsSubmitting(false);
+  };
+
+  const openEdit = (item: GaleriItem) => {
+    setEditData(item);
+    setEditForm({ title: item.title, category: item.category });
+    setIsEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editData) return;
+    setIsSubmitting(true);
+
+    await supabase.from("galeri")
+      .update({ title: editForm.title, category: editForm.category })
+      .eq("id", editData.id);
+
+    setIsEditOpen(false);
+    setEditData(null);
     fetchGaleri();
     setIsSubmitting(false);
   };
@@ -82,7 +104,7 @@ export default function AdminGaleriPage() {
           <h1 className="text-2xl font-black text-white">Manajemen Galeri</h1>
           <p className="text-slate-400 text-sm mt-1">Kelola foto dan dokumentasi kegiatan sekolah</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)}
+        <button onClick={() => setIsUploadOpen(true)}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all">
           <Plus size={18} /> Upload Foto
         </button>
@@ -104,29 +126,38 @@ export default function AdminGaleriPage() {
               <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-end p-3">
                 <p className="text-white text-xs font-bold truncate">{item.title}</p>
-                <p className="text-slate-300 text-[10px]">{item.category}</p>
-                <button onClick={() => setDeleteId(item.id)}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">
-                  <Trash2 size={14} />
-                </button>
+                <p className="text-slate-300 text-[10px] mb-2">{item.category}</p>
+                <div className="flex gap-1">
+                  {/* Tombol Edit */}
+                  <button onClick={() => openEdit(item)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-xs font-bold">
+                    <Pencil size={12} /> Edit
+                  </button>
+                  {/* Tombol Hapus */}
+                  <button onClick={() => setDeleteId(item.id)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors text-xs font-bold">
+                    <Trash2 size={12} /> Hapus
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {isModalOpen && (
+      {/* Modal Upload */}
+      {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setIsModalOpen(false)} />
+          <div className="absolute inset-0 bg-black/70" onClick={() => setIsUploadOpen(false)} />
           <div className="relative bg-slate-800 rounded-3xl border border-slate-700 w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-slate-700">
               <h2 className="text-lg font-bold text-white">Upload Foto Galeri</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
+              <button onClick={() => setIsUploadOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleUpload} className="p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Foto</label>
-                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" required />
                   {imagePreview ? (
                     <img src={imagePreview} alt="preview" className="w-full h-48 object-cover rounded-xl" />
@@ -140,19 +171,19 @@ export default function AdminGaleriPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Judul Foto</label>
-                <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                <input value={uploadForm.title} onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
                   placeholder="Judul foto..." required
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300">Kategori</label>
-                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                <select value={uploadForm.category} onChange={(e) => setUploadForm({...uploadForm, category: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all">
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)}
+                <button type="button" onClick={() => setIsUploadOpen(false)}
                   className="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 font-medium hover:bg-slate-700 transition-all">
                   Batal
                 </button>
@@ -166,6 +197,51 @@ export default function AdminGaleriPage() {
         </div>
       )}
 
+      {/* Modal Edit */}
+      {isEditOpen && editData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setIsEditOpen(false)} />
+          <div className="relative bg-slate-800 rounded-3xl border border-slate-700 w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+              <h2 className="text-lg font-bold text-white">Edit Foto Galeri</h2>
+              <button onClick={() => setIsEditOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleEdit} className="p-6 space-y-4">
+              {/* Preview foto yang ada */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Foto</label>
+                <img src={editData.image_url} alt={editData.title} className="w-full h-48 object-cover rounded-xl opacity-80" />
+                <p className="text-xs text-slate-500">* Foto tidak bisa diubah, hanya judul dan kategori</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Judul Foto</label>
+                <input value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  placeholder="Judul foto..." required
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Kategori</label>
+                <select value={editForm.category} onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all">
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsEditOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 font-medium hover:bg-slate-700 transition-all">
+                  Batal
+                </button>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center justify-center gap-2">
+                  {isSubmitting ? <><Loader2 className="animate-spin" size={18} /> Menyimpan...</> : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Konfirmasi Hapus */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setDeleteId(null)} />
