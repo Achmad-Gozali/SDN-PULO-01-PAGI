@@ -16,7 +16,7 @@ export default function RegistrationForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<SpmbFormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<SpmbFormData>({
     resolver: zodResolver(spmbSchema),
     defaultValues: { jalur: "ZONASI" },
   });
@@ -143,6 +143,57 @@ export default function RegistrationForm() {
     );
   };
 
+  // Komponen 3 dropdown tanggal lahir - range 1990 sampai 2030
+  const TanggalLahirPicker = () => {
+    const [hari, setHari] = React.useState("");
+    const [bulan, setBulan] = React.useState("");
+    const [tahun, setTahun] = React.useState("");
+
+    const updateValue = (h: string, b: string, t: string) => {
+      if (h && b && t) {
+        setValue("tanggalLahir", `${t}-${b.padStart(2, "0")}-${h.padStart(2, "0")}`, { shouldValidate: true });
+      }
+    };
+
+    const hariList = Array.from({ length: 31 }, (_, i) => i + 1);
+    const bulanList = [
+      { val: "1", label: "Januari" }, { val: "2", label: "Februari" },
+      { val: "3", label: "Maret" }, { val: "4", label: "April" },
+      { val: "5", label: "Mei" }, { val: "6", label: "Juni" },
+      { val: "7", label: "Juli" }, { val: "8", label: "Agustus" },
+      { val: "9", label: "September" }, { val: "10", label: "Oktober" },
+      { val: "11", label: "November" }, { val: "12", label: "Desember" },
+    ];
+    // Range 1990 - 2030
+    const tahunList = Array.from({ length: 41 }, (_, i) => 2030 - i);
+
+    const selectClass = cn(
+      inputClass,
+      errors.tanggalLahir ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500"
+    );
+
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        <select value={hari} onChange={(e) => { setHari(e.target.value); updateValue(e.target.value, bulan, tahun); }}
+          className={selectClass}>
+          <option value="">Tanggal</option>
+          {hariList.map(h => <option key={h} value={h}>{h}</option>)}
+        </select>
+        <select value={bulan} onChange={(e) => { setBulan(e.target.value); updateValue(hari, e.target.value, tahun); }}
+          className={selectClass}>
+          <option value="">Bulan</option>
+          {bulanList.map(b => <option key={b.val} value={b.val}>{b.label}</option>)}
+        </select>
+        <select value={tahun} onChange={(e) => { setTahun(e.target.value); updateValue(hari, bulan, e.target.value); }}
+          className={selectClass}>
+          <option value="">Tahun</option>
+          {tahunList.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <input type="hidden" {...register("tanggalLahir")} />
+      </div>
+    );
+  };
+
   const inputClass = "w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none text-sm md:text-base";
 
   return (
@@ -236,10 +287,9 @@ export default function RegistrationForm() {
                 className={cn(inputClass, errors.nik ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
               {errors.nik && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.nik.message}</p>}
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-bold text-slate-700">Tanggal Lahir</label>
-              <input {...register("tanggalLahir")} type="date"
-                className={cn(inputClass, errors.tanggalLahir ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              <TanggalLahirPicker />
               {errors.tanggalLahir && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.tanggalLahir.message}</p>}
             </div>
           </div>
