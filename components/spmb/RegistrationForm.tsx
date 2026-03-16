@@ -74,11 +74,9 @@ export default function RegistrationForm() {
       });
 
       if (insertError) {
-        if (insertError.code === "23505") {
-          setSubmitError("NIK ini sudah terdaftar. Silakan cek status pendaftaran Anda.");
-        } else {
-          setSubmitError("Terjadi kesalahan. Silakan coba lagi.");
-        }
+        setSubmitError(insertError.code === "23505"
+          ? "NIK ini sudah terdaftar. Silakan cek status pendaftaran Anda."
+          : "Terjadi kesalahan. Silakan coba lagi.");
         setIsSubmitting(false);
         return;
       }
@@ -89,207 +87,230 @@ export default function RegistrationForm() {
     } catch {
       setSubmitError("Gagal mengupload dokumen. Pastikan koneksi internet Anda stabil.");
     }
-
     setIsSubmitting(false);
   };
 
-  const FileUploadField = ({ name, label, hint }: { name: keyof SpmbFormData; label: string; hint?: string }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-bold text-slate-700">{label}</label>
-      <div className="relative group">
-        <input type="file" {...register(name)} accept=".pdf,.jpg,.jpeg,.png"
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-        <div className={cn(
-          "w-full p-6 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2",
-          errors[name] ? "border-red-300 bg-red-50" : "border-slate-200 bg-slate-50 group-hover:border-blue-400 group-hover:bg-blue-50"
-        )}>
-          <Upload className="text-slate-400 group-hover:text-blue-500" size={24} />
-          <span className="text-xs font-bold text-slate-500 group-hover:text-blue-600">Pilih File {label}</span>
-          <span className="text-[10px] text-slate-400">{hint || "PDF/JPG/PNG (Maks 5MB)"}</span>
+  // FIX: FileUploadField dengan feedback nama file setelah dipilih
+  const FileUploadField = ({ name, label, hint }: { name: keyof SpmbFormData; label: string; hint?: string }) => {
+    const [fileName, setFileName] = useState<string>("");
+
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-700">{label}</label>
+        <div className="relative group">
+          <input
+            type="file"
+            {...register(name)}
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              setFileName(file ? file.name : "");
+              // trigger react-hook-form onChange juga
+              register(name).onChange(e);
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          <div className={cn(
+            "w-full p-4 md:p-5 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2",
+            errors[name]
+              ? "border-red-300 bg-red-50"
+              : fileName
+              ? "border-blue-400 bg-blue-50"
+              : "border-slate-200 bg-slate-50 group-hover:border-blue-400 group-hover:bg-blue-50"
+          )}>
+            {fileName ? (
+              <>
+                <CheckCircle2 className="text-blue-500" size={22} />
+                {/* FIX: tampilkan nama file yang dipilih */}
+                <span className="text-xs font-bold text-blue-600 text-center break-all line-clamp-2 px-2">{fileName}</span>
+                <span className="text-[10px] text-blue-400">Ketuk untuk ganti file</span>
+              </>
+            ) : (
+              <>
+                <Upload className="text-slate-400 group-hover:text-blue-500 transition-colors" size={22} />
+                <span className="text-xs font-bold text-slate-500 group-hover:text-blue-600 text-center">Pilih {label}</span>
+                <span className="text-[10px] text-slate-400">{hint || "PDF/JPG/PNG (Maks 5MB)"}</span>
+              </>
+            )}
+          </div>
         </div>
+        {errors[name] && (
+          <p className="text-xs font-medium text-red-500 flex items-center gap-1">
+            <AlertCircle size={11} /> {errors[name]?.message as string}
+          </p>
+        )}
       </div>
-      {errors[name] && (
-        <p className="text-xs font-medium text-red-500 flex items-center gap-1">
-          <AlertCircle size={12} /> {errors[name]?.message as string}
-        </p>
-      )}
-    </div>
-  );
+    );
+  };
+
+  const inputClass = "w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none text-sm md:text-base";
 
   return (
     <div className="w-full max-w-4xl mx-auto">
       <AnimatePresence>
         {isSuccess && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="mb-8 p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-4">
-            <CheckCircle2 className="text-emerald-600 shrink-0 mt-1" size={24} />
+          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+            <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={22} />
             <div>
-              <h3 className="font-bold text-emerald-900 text-lg">Pendaftaran Berhasil Terkirim!</h3>
-              <p className="text-emerald-700 text-sm mt-1">
-                Terima kasih telah mendaftar di SDN Pulo 01 Pagi. Mohon tunggu informasi selanjutnya mengenai jadwal verifikasi dokumen via WhatsApp.
+              <h3 className="font-bold text-emerald-900 text-base md:text-lg">Pendaftaran Berhasil Terkirim!</h3>
+              <p className="text-emerald-700 text-sm mt-1 leading-relaxed">
+                Terima kasih telah mendaftar di SDN Pulo 01 Pagi. Mohon tunggu informasi selanjutnya via WhatsApp.
               </p>
-              <button onClick={() => setIsSuccess(false)} className="mt-4 text-sm font-bold text-emerald-800 hover:underline">
-                Tutup Pesan
+              <button onClick={() => setIsSuccess(false)} className="mt-3 text-sm font-bold text-emerald-800 hover:underline active:opacity-70">
+                Tutup
               </button>
             </div>
           </motion.div>
         )}
         {submitError && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4">
-            <AlertCircle className="text-red-600 shrink-0 mt-1" size={24} />
+          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 p-5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+            <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={22} />
             <div>
-              <h3 className="font-bold text-red-900 text-lg">Pendaftaran Gagal</h3>
+              <h3 className="font-bold text-red-900 text-base md:text-lg">Pendaftaran Gagal</h3>
               <p className="text-red-700 text-sm mt-1">{submitError}</p>
-              <button onClick={() => setSubmitError(null)} className="mt-4 text-sm font-bold text-red-800 hover:underline">
-                Tutup Pesan
+              <button onClick={() => setSubmitError(null)} className="mt-3 text-sm font-bold text-red-800 hover:underline active:opacity-70">
+                Tutup
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 md:space-y-8">
 
-        {/* Section 1: Jalur Pendaftaran */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="bg-yellow-100 p-2 rounded-lg text-yellow-700">
-              <FileText size={20} />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900">Jalur Pendaftaran</h2>
+        {/* Section 1: Jalur */}
+        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-5 md:mb-8 pb-3 md:pb-4 border-b border-slate-50">
+            <div className="bg-yellow-100 p-2 rounded-lg text-yellow-700 shrink-0"><FileText size={18} /></div>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900">Jalur Pendaftaran</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { value: "ZONASI", label: "Zonasi", desc: "Berdasarkan jarak tempat tinggal ke sekolah (kuota 70%)" },
-              { value: "AFIRMASI", label: "Afirmasi", desc: "Keluarga tidak mampu / penyandang disabilitas (kuota 15%)" },
+              { value: "ZONASI", label: "Zonasi", desc: "Jarak tempat tinggal ke sekolah (kuota 70%)" },
+              { value: "AFIRMASI", label: "Afirmasi", desc: "Keluarga tidak mampu / disabilitas (kuota 15%)" },
               { value: "MUTASI", label: "Mutasi", desc: "Perpindahan tugas orang tua (kuota 5%)" },
             ].map((item) => (
               <label key={item.value} className={cn(
-                "relative flex flex-col gap-2 p-5 rounded-2xl border-2 cursor-pointer transition-all",
+                "relative flex gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
                 jalur === item.value ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300"
               )}>
                 <input type="radio" {...register("jalur")} value={item.value} className="absolute opacity-0" />
-                <div className="flex items-center gap-2">
-                  <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                    jalur === item.value ? "border-blue-500" : "border-slate-300"
-                  )}>
-                    {jalur === item.value && <div className="w-2 h-2 rounded-full bg-blue-500" />}
-                  </div>
-                  <span className="font-bold text-slate-900">{item.label}</span>
+                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                  jalur === item.value ? "border-blue-500" : "border-slate-300")}>
+                  {jalur === item.value && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+                <div>
+                  <span className="font-bold text-slate-900 text-sm block">{item.label}</span>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{item.desc}</p>
+                </div>
               </label>
             ))}
           </div>
           {errors.jalur && (
             <p className="mt-3 text-xs font-medium text-red-500 flex items-center gap-1">
-              <AlertCircle size={12} /> {errors.jalur.message}
+              <AlertCircle size={11} /> {errors.jalur.message}
             </p>
           )}
         </div>
 
         {/* Section 2: Data Calon Murid */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="bg-blue-100 p-2 rounded-lg text-blue-700"><User size={20} /></div>
-            <h2 className="text-xl font-bold text-slate-900">Data Calon Murid</h2>
+        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-5 md:mb-8 pb-3 md:pb-4 border-b border-slate-50">
+            <div className="bg-blue-100 p-2 rounded-lg text-blue-700 shrink-0"><User size={18} /></div>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900">Data Calon Murid</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { name: "namaLengkap" as const, label: "Nama Lengkap Murid", placeholder: "Sesuai Akte Kelahiran" },
-              { name: "nik" as const, label: "NIK Calon Murid", placeholder: "16 Digit NIK" },
-            ].map(({ name, label, placeholder }) => (
-              <div key={name} className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">{label}</label>
-                <input {...register(name)} placeholder={placeholder}
-                  className={cn("w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none",
-                    errors[name] ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
-                {errors[name] && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={12} /> {errors[name]?.message}</p>}
-              </div>
-            ))}
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">Nama Lengkap Murid</label>
+              <input {...register("namaLengkap")} placeholder="Sesuai Akte Kelahiran"
+                className={cn(inputClass, errors.namaLengkap ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              {errors.namaLengkap && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.namaLengkap.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">NIK Calon Murid</label>
+              <input {...register("nik")} placeholder="16 Digit NIK" inputMode="numeric"
+                className={cn(inputClass, errors.nik ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              {errors.nik && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.nik.message}</p>}
+            </div>
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Tanggal Lahir</label>
               <input {...register("tanggalLahir")} type="date"
-                className={cn("w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none",
-                  errors.tanggalLahir ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
-              {errors.tanggalLahir && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={12} /> {errors.tanggalLahir.message}</p>}
+                className={cn(inputClass, errors.tanggalLahir ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              {errors.tanggalLahir && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.tanggalLahir.message}</p>}
             </div>
           </div>
         </div>
 
         {/* Section 3: Data Orang Tua */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="bg-blue-100 p-2 rounded-lg text-blue-700"><Users size={20} /></div>
-            <h2 className="text-xl font-bold text-slate-900">Data Orang Tua / Wali</h2>
+        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-5 md:mb-8 pb-3 md:pb-4 border-b border-slate-50">
+            <div className="bg-blue-100 p-2 rounded-lg text-blue-700 shrink-0"><Users size={18} /></div>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900">Data Orang Tua / Wali</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Nama Orang Tua / Wali</label>
               <input {...register("namaOrangTua")} placeholder="Nama Lengkap Ayah/Ibu/Wali"
-                className={cn("w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none",
-                  errors.namaOrangTua ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
-              {errors.namaOrangTua && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={12} /> {errors.namaOrangTua.message}</p>}
+                className={cn(inputClass, errors.namaOrangTua ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              {errors.namaOrangTua && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.namaOrangTua.message}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Nomor WhatsApp Aktif</label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input {...register("whatsapp")} placeholder="Contoh: 081234567890"
-                  className={cn("w-full pl-12 pr-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none",
-                    errors.whatsapp ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input {...register("whatsapp")} placeholder="Contoh: 081234567890" inputMode="tel"
+                  className={cn(inputClass, "pl-11", errors.whatsapp ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
               </div>
-              {errors.whatsapp && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={12} /> {errors.whatsapp.message}</p>}
+              {errors.whatsapp && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.whatsapp.message}</p>}
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="md:col-span-2 space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Alamat Lengkap Sesuai KK</label>
-              <textarea {...register("alamat")} rows={4} placeholder="Tuliskan alamat lengkap termasuk RT/RW, Kelurahan, dan Kecamatan"
-                className={cn("w-full px-4 py-3 rounded-xl border bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none resize-none",
-                  errors.alamat ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
-              {errors.alamat && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={12} /> {errors.alamat.message}</p>}
+              <textarea {...register("alamat")} rows={3} placeholder="Tuliskan alamat lengkap termasuk RT/RW, Kelurahan, dan Kecamatan"
+                className={cn(inputClass, "resize-none", errors.alamat ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-blue-500")} />
+              {errors.alamat && <p className="text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle size={11} /> {errors.alamat.message}</p>}
             </div>
           </div>
         </div>
 
         {/* Section 4: Dokumen */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="bg-blue-100 p-2 rounded-lg text-blue-700"><FileText size={20} /></div>
-            <h2 className="text-xl font-bold text-slate-900">Dokumen Persyaratan</h2>
+        <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-5 md:mb-8 pb-3 md:pb-4 border-b border-slate-50">
+            <div className="bg-blue-100 p-2 rounded-lg text-blue-700 shrink-0"><FileText size={18} /></div>
+            <h2 className="text-lg md:text-xl font-bold text-slate-900">Dokumen Persyaratan</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FileUploadField name="fileKK" label="Scan Kartu Keluarga (KK)" hint="KK diterbitkan min. 1 tahun sebelum pendaftaran" />
-            <FileUploadField name="fileAkte" label="Scan Akte Kelahiran" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            <FileUploadField name="fileKK" label="Kartu Keluarga (KK)" hint="KK min. 1 tahun sebelum pendaftaran" />
+            <FileUploadField name="fileAkte" label="Akte Kelahiran" />
             <FileUploadField name="fileSPTJM" label="SPTJM (Bermeterai)" hint="Surat Pernyataan Tanggung Jawab Mutlak" />
-            <FileUploadField name="fileFoto" label="Pas Foto Terbaru" hint="Format JPG/PNG, ukuran 3x4 atau 4x6" />
-
-            {/* Dokumen pendukung khusus jalur */}
+            <FileUploadField name="fileFoto" label="Pas Foto Terbaru" hint="JPG/PNG, ukuran 3x4 atau 4x6" />
             {jalur === "AFIRMASI" && (
-              <div className="md:col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <FileUploadField name="filePendukung" label="Dokumen KIP / KKS / PKH" hint="Bukti keluarga tidak mampu atau disabilitas" />
               </div>
             )}
             {jalur === "MUTASI" && (
-              <div className="md:col-span-2">
-                <FileUploadField name="filePendukung" label="Surat Mutasi / Tugas Orang Tua" hint="Surat keterangan mutasi/pindah tugas resmi" />
+              <div className="col-span-1 sm:col-span-2">
+                <FileUploadField name="filePendukung" label="Surat Mutasi Orang Tua" hint="Surat keterangan mutasi/pindah tugas resmi" />
               </div>
             )}
           </div>
         </div>
 
-        <div className="pt-4">
+        <div className="pt-2">
           <button type="submit" disabled={isSubmitting}
-            className={cn("w-full py-5 rounded-2xl text-white font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3",
-              isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800 shadow-blue-700/20 active:scale-[0.98]"
+            className={cn(
+              "w-full py-4 md:py-5 rounded-2xl text-white font-black text-base md:text-lg shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]",
+              isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800 shadow-blue-700/20"
             )}>
-            {isSubmitting ? (
-              <><Loader2 className="animate-spin" size={24} /> Sedang Mengirim...</>
-            ) : (
-              <><CheckCircle2 size={24} /> Kirim Pendaftaran SPMB 2026</>
-            )}
+            {isSubmitting
+              ? <><Loader2 className="animate-spin" size={22} /> Sedang Mengirim...</>
+              : <><CheckCircle2 size={22} /> Kirim Pendaftaran SPMB 2026</>}
           </button>
-          <p className="text-center text-slate-400 text-xs mt-6">
+          <p className="text-center text-slate-400 text-xs mt-4 px-4">
             Dengan menekan tombol di atas, Anda menyetujui bahwa data yang diberikan adalah benar dan sah.
           </p>
         </div>
