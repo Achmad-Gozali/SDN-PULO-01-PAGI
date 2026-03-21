@@ -96,8 +96,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500 text-center">
         <p>© 2026 SDN Pulo 01 Pagi. Seluruh Hak Cipta Dilindungi.</p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-slate-300">Kebijakan Privasi</a>
-          <a href="#" className="hover:text-slate-300">Syarat & Ketentuan</a>
+          <Link href="/kebijakan-privasi" className="hover:text-slate-300">Kebijakan Privasi</Link>
+          <Link href="/syarat-ketentuan" className="hover:text-slate-300">Syarat & Ketentuan</Link>
         </div>
       </div>
     </footer>

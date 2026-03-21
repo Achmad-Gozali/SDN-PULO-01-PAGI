@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -43,9 +44,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-700 p-1.5 md:p-2 rounded-lg text-white group-hover:bg-blue-600 transition-colors">
-            <GraduationCap size={20} className="md:w-6 md:h-6" />
-          </div>
+          <Image
+            src="/logopulo.jpeg"
+            alt="Logo SDN Pulo 01"
+            width={44}
+            height={44}
+            className="rounded-lg object-contain"
+          />
           <div className="flex flex-col">
             <span className={cn("font-bold text-base md:text-lg leading-none transition-colors",
               isScrolled ? "text-blue-900" : "text-white")}>
